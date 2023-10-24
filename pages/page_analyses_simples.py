@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from df_cleaner import get_cleaned_df
 import altair as alt
-
+import random 
+st.set_page_config(layout="wide")
 class Page_analyse_simples: 
     def __init__(self, df):
         self.df = df
@@ -15,14 +16,21 @@ class Page_analyse_simples:
         
         self.df["Date de publication"] = pd.to_datetime(self.df["Date de publication"])
         
-        self.sidebar_sliders()
+        selected_categ = self.sidebar_sliders()
+        print(selected_categ, type(selected_categ))
         st.markdown("---")
         st.metric(label="Nombre de produits observés", value=(self.df.shape[0]))
         st.markdown("---")
-        self.histo_recalls_per_month()
-        self.retours_par_marque()
-        self.pie_categorie()
         self.visu_images()
+        st.markdown("---")
+        self.histo_recalls_per_month()
+        st.markdown("---")
+        self.retours_par_marque()
+        st.markdown("---")
+        if len(selected_categ) == 1:
+            self.bar_sousCategories(selected_categ[0])
+        else: self.pie_categorie()
+        st.markdown("---")
         selected_columns = st.multiselect("Colonnes", self.df.columns)
         try : 
             self.df.drop(columns=["Unnamed: 0"], inplace=True)
@@ -32,6 +40,12 @@ class Page_analyse_simples:
             st.dataframe(df_show)
         else :
             st.dataframe(self.df)
+            
+    def bar_sousCategories(self,categorie):
+        df = self.df.copy()
+        df=df[df['Catégorie de produit']==categorie][['Sous-catégorie de produit']]
+        group_by_sous_categorie=df.groupby('Sous-catégorie de produit').size()
+        st.bar_chart(group_by_sous_categorie)
     
     def histo_recalls_per_month(self):
         df = self.df
@@ -119,6 +133,8 @@ class Page_analyse_simples:
         # If specific brands are selected, filter the DataFrame
         if selected_brands:
             self.df = self.df[self.df['Nom de la marque du produit'].isin(selected_brands)]
+        
+        return selected_categories
 
     def pie_categorie(self):
         df = self.df  # Assuming self.df is your DataFrame
@@ -156,34 +172,35 @@ class Page_analyse_simples:
         st.altair_chart(pie_chart, use_container_width=True)
 
     def visu_images(self):
-        # Filter to include only rows with non-empty "Liens vers les images"
         valid_image_links_df = self.df[self.df["Liens vers les images"].notna()]
 
-        sample_df = valid_image_links_df.sample(min(len(valid_image_links_df), 20))
-
-        # If there are no images to display, show a message and return
-        if len(sample_df) == 0:
+        if valid_image_links_df.empty:
             st.write("No images to display.")
             return
 
-        # Create a select box for navigation
-        selected_index = st.select_slider(
-            "Choose the image index",
-            options=range(len(sample_df)),
-            format_func=lambda x: f"Image {x + 1}"
-        )
+        # Ensure 'img_index' is in the session state and within bounds.
+        if 'img_index' not in st.session_state or st.session_state['img_index'] >= len(valid_image_links_df):
+            st.session_state['img_index'] = random.randint(0, len(valid_image_links_df) - 1)
 
-        selected_row = sample_df.iloc[selected_index]
+        if st.button('Next'):
+            # Also ensuring the new random index is within bounds after any potential DataFrame change.
+            st.session_state['img_index'] = random.randint(0, len(valid_image_links_df) - 1)
+
+        # Now that we've added checks above, we know 'img_index' is within bounds here.
+        selected_row = valid_image_links_df.iloc[st.session_state['img_index']]
 
         col1, col2 = st.columns(2)
-        
+
         with col1:
-            st.image(selected_row["Liens vers les images"], caption=selected_row["Noms des modèles ou références"], use_column_width=True)
-            # st.write(selected_row["Liens vers les images"])
+            image_link = selected_row["Liens vers les images"].split(',')[0]
+            st.image(image_link, caption=selected_row["Noms des modèles ou références"], use_column_width=True)
+
+
+
         with col2:
             st.write("**Additional Info:**")
-            st.write("**Catégorie de produit:** " + str(selected_row["Catégorie de produit"]))  
-            st.write("**Nom de la marque du produit: **" + str(selected_row["Nom de la marque du produit"]))
+            st.write("**Catégorie de produit:** " + str(selected_row["Catégorie de produit"]))
+            st.write("**Nom de la marque du produit:** " + str(selected_row["Nom de la marque du produit"]))
             st.write("**Produit Réference:** " + str(selected_row["Noms des modèles ou références"]))
             st.write("**Zone géographique de vente:** " + str(selected_row["Zone géographique de vente"]))
             st.write("**Nature juridique du rappel:** " + str(selected_row["Nature juridique du rappel"]))

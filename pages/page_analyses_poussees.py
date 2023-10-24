@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from wordcloud import WordCloud
 import nltk
 from nltk.corpus import stopwords
+from pages.page_analyses_simples import Page_analyse_simples
 
 class Page_analyse_poussee:
     
@@ -13,30 +14,42 @@ class Page_analyse_poussee:
         self.custom_stop_words = set()
     
     def app(self):
-        st.title('Page d\'analyses simples')  
-        
-        self.df["Date de publication"] = pd.to_datetime(self.df["Date de publication"])
-        
-        self.sidebar_sliders()
+        st.title('Main Content Area')
 
-        st.image(self.worcloud().to_array())
+        # Create columns for the layout
+        col1, col2 = st.columns([2, 1])  # Adjusting the ratio of the main area to the pseudo-sidebar
+
+        # Main content area
+        with col1:
+            st.title('Page d\'analyses simples')  
+        
+            self.df["Date de publication"] = pd.to_datetime(self.df["Date de publication"])
+            
+            self.sidebar_sliders()
+
+            st.image(self.worcloud().to_array())
+
+        # Right "pseudo-sidebar" area
+        with col2:
+            Page_analyse_simples(self.df).visu_images()
+        
+        
 
     def worcloud(self):
+        
         col1, col2 = st.columns(2)
-        df_wc = self.df.copy()
         with col1:
             new_stop_words = st.text_input("Ajotuez un stop word (séparés par des ,):")
         with col2:
             new_discrim_words = st.text_input("Ajouter des mots pout filtrer la colonne (séparés par des ,):")
         if new_discrim_words:
-            df_wc = df_wc[df_wc["Motif du rappel"].str.contains(new_discrim_words, case=False)]
+            self.df = self.df[self.df["Motif du rappel"].str.contains(new_discrim_words, case=False)]
         if new_stop_words:
             words_list = [word.strip().lower() for word in new_stop_words.split(',')]
             _ = self.custom_stop_words.update(words_list)
 
-        wordcloud = self.generate_wordcloud(df_wc)
+        wordcloud = self.generate_wordcloud(self.df)
         return wordcloud
-
     
     def generate_wordcloud(self, df):
         # Ensure the necessary NLTK data is downloaded (stopwords)
