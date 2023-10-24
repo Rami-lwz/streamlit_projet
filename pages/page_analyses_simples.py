@@ -6,18 +6,17 @@ import seaborn as sns
 from df_cleaner import get_cleaned_df
 import altair as alt
 import random 
-st.set_page_config(layout="wide")
+try: st.set_page_config(layout="wide") 
+except: pass
 class Page_analyse_simples: 
     def __init__(self, df):
         self.df = df
-    
-    def app(self):
+    def app(self, sidebar=True):
         st.title('Page d\'analyses simples')  
         
         self.df["Date de publication"] = pd.to_datetime(self.df["Date de publication"])
         
-        selected_categ = self.sidebar_sliders()
-        print(selected_categ, type(selected_categ))
+        if sidebar : selected_categ = self.sidebar_sliders()
         st.markdown("---")
         st.metric(label="Nombre de produits observés", value=(self.df.shape[0]))
         st.markdown("---")

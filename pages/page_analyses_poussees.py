@@ -6,34 +6,34 @@ from wordcloud import WordCloud
 import nltk
 from nltk.corpus import stopwords
 from pages.page_analyses_simples import Page_analyse_simples
-
+try: st.set_page_config(layout="wide") 
+except: pass
 class Page_analyse_poussee:
     
     def __init__(self, df):
         self.df = df
         self.custom_stop_words = set()
-    
-    def app(self):
-        st.title('Main Content Area')
+
+    def app(self, sidebar=True):
+        st.title('Page d\'analyses poussées')  
+        st.markdown("---")
 
         # Create columns for the layout
         col1, col2 = st.columns([2, 1])  # Adjusting the ratio of the main area to the pseudo-sidebar
+        self.df["Date de publication"] = pd.to_datetime(self.df["Date de publication"])
+        if sidebar : self.sidebar_sliders()
 
-        # Main content area
+            # Main content area
         with col1:
-            st.title('Page d\'analyses simples')  
-        
-            self.df["Date de publication"] = pd.to_datetime(self.df["Date de publication"])
-            
-            self.sidebar_sliders()
-
             st.image(self.worcloud().to_array())
-
+            # st.image(self.generate_wordcloud(df= self.df, column="Préconisations sanitaires").to_array())
         # Right "pseudo-sidebar" area
-        with col2:
+        with col2:  
             Page_analyse_simples(self.df).visu_images() 
+        st.metric(label="Nombre de produits observés", value=(self.df.shape[0]))
+        st.markdown("---")
 
-    def worcloud(self):
+    def worcloud(self, column="Motif du rappel"):
         
         col1, col2 = st.columns(2)
         with col1:
@@ -41,15 +41,15 @@ class Page_analyse_poussee:
         with col2:
             new_discrim_words = st.text_input("Ajouter des mots pout filtrer la colonne (séparés par des ,):")
         if new_discrim_words:
-            self.df = self.df[self.df["Motif du rappel"].str.contains(new_discrim_words, case=False)]
+            self.df = self.df[self.df[column].str.contains(new_discrim_words, case=False)]
         if new_stop_words:
             words_list = [word.strip().lower() for word in new_stop_words.split(',')]
             _ = self.custom_stop_words.update(words_list)
 
-        wordcloud = self.generate_wordcloud(self.df)
+        wordcloud = self.generate_wordcloud(self.df, column)
         return wordcloud
     
-    def generate_wordcloud(self, df):
+    def generate_wordcloud(self, df, column):
         # Ensure the necessary NLTK data is downloaded (stopwords)
         try:
             nltk.data.find('corpora/stopwords')
@@ -61,7 +61,7 @@ class Page_analyse_poussee:
 
         _ = stopwords_fr.update(custom_stop_words)  # Add the custom stopwords to the set
         # Combine all rows' text in the specified column into one large text and remove NaNs
-        text = ' '.join(df['Motif du rappel'].dropna())
+        text = ' '.join(df[column].dropna())
 
         # Create the word cloud object
         wordcloud = WordCloud(stopwords=stopwords_fr, width=1600, height=800).generate(text)
@@ -99,7 +99,19 @@ class Page_analyse_poussee:
         # Filter for 'Catégorie de produit'
         unique_categories = self.df['Catégorie de produit'].value_counts().index.unique()
         selected_categories = st.sidebar.multiselect('Select Catégorie de produit', options=unique_categories)
+        if selected_categories:
+            # Filter the DataFrame based on the selected categories
+            self.df = self.df[self.df['Catégorie de produit'].isin(selected_categories)]
 
+            # Get the unique subcategories after the filtering
+            unique_sous_categories = self.df['Sous-catégorie de produit'].value_counts().index.unique()
+
+            # Allow the user to select Subcategories
+            selected_sous_categories = st.sidebar.multiselect('Select Sous Catégorie de produit', options=unique_sous_categories)
+
+            if selected_sous_categories:
+                # Filter the DataFrame based on the selected subcategories
+                self.df = self.df[self.df['Sous-catégorie de produit'].isin(selected_sous_categories)]
         # If specific categories are selected, filter the DataFrame
         if selected_categories:
             self.df = self.df[self.df['Catégorie de produit'].isin(selected_categories)]

@@ -5,7 +5,8 @@ import os
 from df_cleaner import get_cleaned_df
 from pages.page_analyses_simples import Page_analyse_simples
 from pages.page_analyses_poussees import Page_analyse_poussee
-
+try: st.set_page_config(layout="wide") 
+except: pass
 columns = [
  'Référence Fiche',
  'N° de Version',
@@ -49,11 +50,7 @@ def app(df):
     if selected_columns.__len__() > 0:
         df_show = df[selected_columns]
         st.dataframe(df_show)
-    col1, col2 = st.columns(2)
-    with col1:
-        Page_analyse_simples(df).app()
-    with col2:
-        Page_analyse_poussee(df).app()
+    
         
         
         
