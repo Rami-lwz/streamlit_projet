@@ -22,11 +22,8 @@ class Page_analyse_simples:
         self.histo_recalls_per_month()
         self.retours_par_marque()
         self.pie_categorie()
-        # show df
-        
+        self.visu_images()
         selected_columns = st.multiselect("Colonnes", self.df.columns)
-        # add the number of rows after filtering as a indicator
-        # show df
         try : 
             self.df.drop(columns=["Unnamed: 0"], inplace=True)
         except: pass
@@ -126,24 +123,27 @@ class Page_analyse_simples:
     def pie_categorie(self):
         df = self.df  # Assuming self.df is your DataFrame
 
-        # First, we'll need to prepare the data for the pie chart.
-        # This involves grouping the data by category and counting the records in each.
+        # First, prepare the data for the pie chart.
+        # Group the data by category and count the records in each.
         categorie_counts = df['Catégorie de produit'].value_counts().reset_index()
         categorie_counts.columns = ['Catégorie de produit', 'Counts']
-        categorie_counts = categorie_counts.sort_values('Counts', ascending=False)
+
+        # Calculate the percentage for each category
+        total = categorie_counts['Counts'].sum()  # Sum of all counts (total number of records)
+        categorie_counts['Percentage'] = (categorie_counts['Counts'] / total) * 100  # Calculate percentage
 
         # Create a pie chart
         pie_chart = alt.Chart(categorie_counts).mark_arc(
-            innerRadius=50,  # This makes the pie chart to have a 'donut' shape
+            innerRadius=50,  # 'Donut' shape
             outerRadius=100,
-            stroke='white'  # This creates a white line between segments
+            stroke='white'
         ).encode(
-            theta='Counts:Q',  # This tells Altair which field to use to create pie segments
-            color=alt.Color('Catégorie de produit:N', legend=alt.Legend(title="Catégories de produits")),  # This tells which field should define the color
-            tooltip=['Catégorie de produit', 'Counts']  # Shows data on hover
+            theta='Percentage:Q',  # Use the 'Percentage' field for pie segments
+            color=alt.Color('Catégorie de produit:N', legend=alt.Legend(title="Catégories de produits")),
+            tooltip=[alt.Tooltip('Catégorie de produit:N'), alt.Tooltip('Percentage:Q', format='.2f', title='Percentage')]  # Show percentage on hover
         ).properties(
-            title='Distribution by Category',
-            width=300,  # you can adjust dimensions as needed
+            title='Distribution by Category (%)',
+            width=300,
             height=300
         ).configure_title(
             fontSize=20
@@ -154,6 +154,41 @@ class Page_analyse_simples:
 
         # Display the chart in Streamlit
         st.altair_chart(pie_chart, use_container_width=True)
+
+    def visu_images(self):
+        # Filter to include only rows with non-empty "Liens vers les images"
+        valid_image_links_df = self.df[self.df["Liens vers les images"].notna()]
+
+        sample_df = valid_image_links_df.sample(min(len(valid_image_links_df), 20))
+
+        # If there are no images to display, show a message and return
+        if len(sample_df) == 0:
+            st.write("No images to display.")
+            return
+
+        # Create a select box for navigation
+        selected_index = st.select_slider(
+            "Choose the image index",
+            options=range(len(sample_df)),
+            format_func=lambda x: f"Image {x + 1}"
+        )
+
+        selected_row = sample_df.iloc[selected_index]
+
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.image(selected_row["Liens vers les images"], caption=selected_row["Noms des modèles ou références"], use_column_width=True)
+            # st.write(selected_row["Liens vers les images"])
+        with col2:
+            st.write("**Additional Info:**")
+            st.write("**Catégorie de produit:** " + str(selected_row["Catégorie de produit"]))  
+            st.write("**Nom de la marque du produit: **" + str(selected_row["Nom de la marque du produit"]))
+            st.write("**Produit Réference:** " + str(selected_row["Noms des modèles ou références"]))
+            st.write("**Zone géographique de vente:** " + str(selected_row["Zone géographique de vente"]))
+            st.write("**Nature juridique du rappel:** " + str(selected_row["Nature juridique du rappel"]))
+            st.write("**Motif du rappel:** " + str(selected_row["Motif du rappel"]))
+
 
 if __name__ == "__main__": 
     p = Page_analyse_simples(get_cleaned_df())

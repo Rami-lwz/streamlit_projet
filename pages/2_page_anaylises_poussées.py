@@ -32,7 +32,7 @@ class Page_analyse_poussee:
             df_wc = df_wc[df_wc["Motif du rappel"].str.contains(new_discrim_words, case=False)]
         if new_stop_words:
             words_list = [word.strip().lower() for word in new_stop_words.split(',')]
-            self.custom_stop_words.update(words_list)
+            _ = self.custom_stop_words.update(words_list)
 
         wordcloud = self.generate_wordcloud(df_wc)
         return wordcloud
@@ -48,7 +48,7 @@ class Page_analyse_poussee:
         # Set stopwords for French
         stopwords_fr = set(stopwords.words('french'))
 
-        stopwords_fr.update(custom_stop_words)  # Add the custom stopwords to the set
+        _ = stopwords_fr.update(custom_stop_words)  # Add the custom stopwords to the set
         # Combine all rows' text in the specified column into one large text and remove NaNs
         text = ' '.join(df['Motif du rappel'].dropna())
 
