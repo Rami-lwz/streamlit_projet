@@ -31,9 +31,7 @@ class Page_analyse_poussee:
 
         # Right "pseudo-sidebar" area
         with col2:
-            Page_analyse_simples(self.df).visu_images()
-        
-        
+            Page_analyse_simples(self.df).visu_images() 
 
     def worcloud(self):
         

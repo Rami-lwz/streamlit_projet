@@ -189,11 +189,11 @@ class Page_analyse_simples:
         # Now that we've added checks above, we know 'img_index' is within bounds here.
         selected_row = valid_image_links_df.iloc[st.session_state['img_index']]
 
-        col1, col2 = st.columns(2)
+        col1, col2 = st.columns([1, 2])
 
         with col1:
-            image_link = selected_row["Liens vers les images"].split(',')[0]
-            st.image(image_link, caption=selected_row["Noms des modèles ou références"], use_column_width=True)
+            image_link = selected_row["Liens vers les images"].split(' ')[0]
+            st.image(image_link, caption=selected_row["Noms des modèles ou références"], width=None, use_column_width="auto")
 
 
 
@@ -205,7 +205,7 @@ class Page_analyse_simples:
             st.write("**Zone géographique de vente:** " + str(selected_row["Zone géographique de vente"]))
             st.write("**Nature juridique du rappel:** " + str(selected_row["Nature juridique du rappel"]))
             st.write("**Motif du rappel:** " + str(selected_row["Motif du rappel"]))
-
+            st.write(str(selected_row["Liens vers les images"]))
 
 if __name__ == "__main__": 
     p = Page_analyse_simples(get_cleaned_df())
