@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from wordcloud import WordCloud
 import nltk
 from nltk.corpus import stopwords
-
+import decorator
 class Page_analyse_poussee:
     
     def __init__(self, df):
@@ -21,6 +21,7 @@ class Page_analyse_poussee:
 
         st.image(self.worcloud().to_array())
 
+    @decorator.log_execution_time
     def worcloud(self):
         col1, col2 = st.columns(2)
         df_wc = self.df.copy()
@@ -37,7 +38,7 @@ class Page_analyse_poussee:
         wordcloud = self.generate_wordcloud(df_wc)
         return wordcloud
 
-    
+    @decorator.log_execution_time
     def generate_wordcloud(self, df):
         # Ensure the necessary NLTK data is downloaded (stopwords)
         try:
@@ -56,7 +57,7 @@ class Page_analyse_poussee:
         wordcloud = WordCloud(stopwords=stopwords_fr, width=1600, height=800).generate(text)
 
         return wordcloud    
-    
+    @decorator.log_execution_time
     def sidebar_sliders(self):
         min_date = self.df["Date de publication"].min().date()
         max_date = self.df["Date de publication"].max().date()

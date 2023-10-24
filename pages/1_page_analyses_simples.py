@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from df_cleaner import get_cleaned_df
 import altair as alt
+import decorator
 
 class Page_analyse_simples: 
     def __init__(self, df):
@@ -12,7 +13,6 @@ class Page_analyse_simples:
     
     def app(self):
         st.title('Page d\'analyses simples')  
-        
         self.df["Date de publication"] = pd.to_datetime(self.df["Date de publication"])
         
         self.sidebar_sliders()
@@ -36,6 +36,8 @@ class Page_analyse_simples:
         else :
             st.dataframe(self.df)
     
+    
+    @decorator.log_execution_time
     def histo_recalls_per_month(self):
         df = self.df
         # Generate a new column to assist with plotting
@@ -51,7 +53,8 @@ class Page_analyse_simples:
 
         # Display the chart
         st.bar_chart(chart_data)
-
+        
+    @decorator.log_execution_time
     def retours_par_marque(self):
         df = self.df
 
@@ -78,7 +81,8 @@ class Page_analyse_simples:
 
         # Use Streamlit to render the plot
         st.altair_chart(chart, use_container_width=True)
-
+        
+    @decorator.log_execution_time
     def sidebar_sliders(self):
         min_date = self.df["Date de publication"].min().date()
         max_date = self.df["Date de publication"].max().date()
@@ -123,6 +127,8 @@ class Page_analyse_simples:
         if selected_brands:
             self.df = self.df[self.df['Nom de la marque du produit'].isin(selected_brands)]
 
+
+    @decorator.log_execution_time
     def pie_categorie(self):
         df = self.df  # Assuming self.df is your DataFrame
 
