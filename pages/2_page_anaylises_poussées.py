@@ -86,14 +86,23 @@ class Page_analyse_poussee:
         if selected_nature_juridique:
             self.df = self.df[self.df['Nature juridique du rappel'].isin(selected_nature_juridique)]
 
-        # Filter for 'Catégorie de produit'
         unique_categories = self.df['Catégorie de produit'].value_counts().index.unique()
         selected_categories = st.sidebar.multiselect('Select Catégorie de produit', options=unique_categories)
 
-        # If specific categories are selected, filter the DataFrame
+# Filter for 'Sous Catégorie de produit'
         if selected_categories:
+            # Filter the DataFrame based on the selected categories
             self.df = self.df[self.df['Catégorie de produit'].isin(selected_categories)]
 
+            # Get the unique subcategories after the filtering
+            unique_sous_categories = self.df['Sous-catégorie de produit'].value_counts().index.unique()
+
+            # Allow the user to select Subcategories
+            selected_sous_categories = st.sidebar.multiselect('Select Sous Catégorie de produit', options=unique_sous_categories)
+
+            if selected_sous_categories:
+                # Filter the DataFrame based on the selected subcategories
+                self.df = self.df[self.df['Sous-catégorie de produit'].isin(selected_sous_categories)]
         # Filter for 'Nom de la marque du produit'
         unique_brands = self.df['Nom de la marque du produit'].value_counts().index.unique()
         selected_brands = st.sidebar.multiselect('Select Nom de la marque du produit', options=unique_brands)
