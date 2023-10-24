@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from df_cleaner import get_cleaned_df
 import altair as alt
-import decorator
+import decorator_log
 
 class Page_analyse_simples: 
     def __init__(self, df):
@@ -22,6 +22,7 @@ class Page_analyse_simples:
         self.histo_recalls_per_month()
         self.retours_par_marque()
         self.pie_categorie()
+        self.bar_sousCategories()
         # show df
         
         selected_columns = st.multiselect("Colonnes", self.df.columns)
@@ -37,7 +38,7 @@ class Page_analyse_simples:
             st.dataframe(self.df)
     
     
-    @decorator.log_execution_time
+    @decorator_log.log_execution_time
     def histo_recalls_per_month(self):
         df = self.df
         # Generate a new column to assist with plotting
@@ -54,7 +55,7 @@ class Page_analyse_simples:
         # Display the chart
         st.bar_chart(chart_data)
         
-    @decorator.log_execution_time
+    @decorator_log.log_execution_time
     def retours_par_marque(self):
         df = self.df
 
@@ -82,7 +83,7 @@ class Page_analyse_simples:
         # Use Streamlit to render the plot
         st.altair_chart(chart, use_container_width=True)
         
-    @decorator.log_execution_time
+    @decorator_log.log_execution_time
     def sidebar_sliders(self):
         min_date = self.df["Date de publication"].min().date()
         max_date = self.df["Date de publication"].max().date()
@@ -128,7 +129,7 @@ class Page_analyse_simples:
             self.df = self.df[self.df['Nom de la marque du produit'].isin(selected_brands)]
 
 
-    @decorator.log_execution_time
+    @decorator_log.log_execution_time
     def pie_categorie(self):
         df = self.df  # Assuming self.df is your DataFrame
 
@@ -160,7 +161,41 @@ class Page_analyse_simples:
 
         # Display the chart in Streamlit
         st.altair_chart(pie_chart, use_container_width=True)
-
+        
+        
+        
+    @decorator_log.log_execution_time
+    def bar_sousCategories(self):
+        df = self.df
+        df=df[df['Catégorie de produit']=='Alimentation'][['Sous-catégorie de produit']]
+        group_by_sous_categorie=df.groupby('Sous-catégorie de produit').count()
+        
+        st.bar_chart(group_by_sous_categorie)
+        
+    
+    @decorator_log.log_execution_time
+    def hist_sousCategories(self,categorie):
+        df = self.df
+        df=df[df['Catégorie de produit']==categorie][['Sous-catégorie de produit']]
+        st.write('histavec `st.bar_chart` :')
+        st.pyplot(plt.hist(df['Sous-catégorie de produit']))  
+        
+    
+    @decorator_log.log_execution_time
+    def piechart_sousCategories(self,categorie):
+        df = self.df
+        df=df[df['Catégorie de produit']==categorie][['Catégorie de produit','Sous-catégorie de produit']]
+        st.pyplot(plt.pie(df['Sous-catégorie de produit'].value_counts(),labels=df['Sous-catégorie de produit'].value_counts().index))
+    
+        
+    def corr_matrix(self):
+        df = self.df
+        colonnes_numeriques = df.select_dtypes(include=[np.number]).columns
+        corr = df[colonnes_numeriques].corr()
+        st.write(corr)
+        
 if __name__ == "__main__": 
     p = Page_analyse_simples(get_cleaned_df())
     p.app()
+    
+    
