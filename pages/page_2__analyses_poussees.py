@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from wordcloud import WordCloud
 import nltk
 from nltk.corpus import stopwords
-from pages.page_analyses_simples import Page_analyse_simples
+from pages.page_1__analyses_simples import Page_analyse_simples
 import decorator_log
 
 try: st.set_page_config(layout="wide") 
@@ -35,6 +35,7 @@ class Page_analyse_poussee:
             Page_analyse_simples(self.df).visu_images() 
         st.metric(label="Nombre de produits observés", value=(self.df.shape[0]))
         st.markdown("---")
+        self.plot_duration_scatter()
 
     def worcloud(self, column="Motif du rappel"):
         col1, col2 = st.columns(2)
@@ -70,7 +71,19 @@ class Page_analyse_poussee:
         wordcloud = WordCloud(stopwords=stopwords_fr, width=1600, height=800).generate(text)
 
         return wordcloud    
-    
+    def plot_duration_scatter(self):
+        self.df[['Début','Fin']] = self.df['Date début/Fin de commercialisation'].str.replace('Du ', '', regex=True).str.split(' au ', expand=True)
+        self.df['Date début commercialisation'] = pd.to_datetime(self.df['Début'], dayfirst=True, errors='coerce')
+        self.df['Date fin commercialisation'] = pd.to_datetime(self.df['Fin'], dayfirst=True, errors='coerce')
+
+        # Calculate duration between the start and end of marketing
+        self.df['Durée entre commercialisation et rappel'] = (self.df['Date fin commercialisation'] - self.df['Date début commercialisation']).dt.days
+
+        # Remove rows where 'Durée entre commercialisation et rappel' is NaN
+        self.df = self.df[self.df['Durée entre commercialisation et rappel'].notnull()]
+
+        st.scatter_chart(self.df, x='Durée entre commercialisation et rappel', y='Catégorie de produit')
+
     def sidebar_sliders(self):
         min_date = self.df["Date de publication"].min().date()
         max_date = self.df["Date de publication"].max().date()

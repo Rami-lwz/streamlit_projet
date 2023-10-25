@@ -2,3 +2,5 @@
 venv/Scripts/python.exe
 *.pyc
 venv/*
+methods_exec_logs.log
+*.log

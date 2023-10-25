@@ -19,15 +19,17 @@ class Page_analyse_simples:
     def app(self, sidebar=True):
         st.title('Page d\'analyses simples')          
         self.df["Date de publication"] = pd.to_datetime(self.df["Date de publication"])
-        if sidebar : selected_categ = self.sidebar_sliders()
+        if sidebar : selected_categ, selected_brands = self.sidebar_sliders()
         st.markdown("---")
         st.metric(label="Nombre de produits observés", value=(self.df.shape[0]))
         st.markdown("---")
         self.visu_images()
         st.markdown("---")
-        self.histo_recalls_per_month()
+        self.histo_recalls_per_month_or_day()
         st.markdown("---")
-        self.retours_par_marque()
+        if len(selected_brands) != 1:
+            self.retours_par_marque()
+        else: self.nature_juridique_marque_simple()
         st.markdown("---")
         if len(selected_categ) == 1:
             self.bar_sousCategories(selected_categ[0])
@@ -51,21 +53,38 @@ class Page_analyse_simples:
         st.bar_chart(group_by_sous_categorie)
         
     @decorator_log.log_execution_time
-    def histo_recalls_per_month(self):
+    def histo_recalls_per_month_or_day(self):
         df = self.df
-        # Generate a new column to assist with plotting
-        df["month_year"] = df["Date de publication"].dt.to_period('M')  # This creates a PeriodIndex
+        # Generate a new column for month_year and day granularity
+        df["month_year"] = df["Date de publication"].dt.to_period('M')  # This creates a PeriodIndex for months
+        df["day"] = df["Date de publication"].dt.to_period('D')  # This creates a PeriodIndex for days
 
-        # Count the number of recalls per 'month_year' and reset the index to use Streamlit charts properly
-        count_df = df["month_year"].value_counts().rename_axis('month_year').reset_index(name='counts')
-        count_df['month_year'] = count_df['month_year'].dt.strftime('%Y-%m')  # Convert Period to string for proper plotting
-        count_df = count_df.sort_values(by="month_year") 
+        # Determine if we need a monthly or daily plot
+        unique_month_years = df["month_year"].nunique()
 
-        # Create the data for the chart
-        chart_data = pd.DataFrame(count_df['counts'].values, index=count_df['month_year'], columns=['counts'])
+        if unique_month_years > 1:
+            # Monthly plot logic remains the same
+            count_df = df["month_year"].value_counts().rename_axis('month_year').reset_index(name='counts')
+            count_df['month_year'] = count_df['month_year'].dt.strftime('%Y-%m')  # Convert Period to string
+            count_df = count_df.sort_values(by="month_year")
 
-        # Display the chart
-        st.bar_chart(chart_data)
+            # Create the data for the chart
+            chart_data = pd.DataFrame(count_df['counts'].values, index=count_df['month_year'], columns=['counts'])
+
+            # Display the monthly chart
+            st.line_chart(chart_data)
+        else:
+            # If only one month is selected, switch to daily granularity
+            count_day_df = df["day"].value_counts().rename_axis('day').reset_index(name='counts')
+            count_day_df['day'] = count_day_df['day'].dt.strftime('%Y-%m-%d')  # Convert Period to string
+            count_day_df = count_day_df.sort_values(by="day")
+
+            # Create the data for the chart
+            chart_data_day = pd.DataFrame(count_day_df['counts'].values, index=count_day_df['day'], columns=['counts'])
+
+            # Display the daily chart
+            st.line_chart(chart_data_day)
+
         
     @decorator_log.log_execution_time
     def retours_par_marque(self):
@@ -95,6 +114,30 @@ class Page_analyse_simples:
         # Use Streamlit to render the plot
         st.altair_chart(chart, use_container_width=True)
 
+    def nature_juridique_marque_simple(self):
+        single_brand_df = self.df[self.df['Nom de la marque du produit'] == self.df['Nom de la marque du produit'].unique()[0]]
+
+        # Let's assume 'Nature juridique du rappel' is a column in your dataframe
+        nature_counts = single_brand_df['Nature juridique du rappel'].value_counts().reset_index()
+        nature_counts.columns = ['Nature', 'Counts']
+
+        # Create an Altair chart for 'Nature juridique du rappel'
+        nature_chart = alt.Chart(nature_counts).mark_bar().encode(
+            x=alt.X('Counts:Q', title='Nombre de retours'),
+            y=alt.Y('Nature:N', sort='-x', title='Nature juridique du rappel'),
+            tooltip=['Nature', 'Counts']
+        ).properties(
+            title=f"Nature juridique du rappel pour {single_brand_df['Nom de la marque du produit'].unique()[0]}",
+            width=600,
+            height=400
+        ).configure_axis(
+            labelFontSize=12,
+            titleFontSize=14
+        ).configure_title(
+            fontSize=16
+        )
+        st.altair_chart(nature_chart, use_container_width=True)
+    
     def sidebar_sliders(self):
         min_date = self.df["Date de publication"].min().date()
         max_date = self.df["Date de publication"].max().date()
@@ -139,7 +182,7 @@ class Page_analyse_simples:
         if selected_brands:
             self.df = self.df[self.df['Nom de la marque du produit'].isin(selected_brands)]
         
-        return selected_categories
+        return selected_categories, selected_brands
     
     @decorator_log.log_execution_time
     def pie_categorie(self):
