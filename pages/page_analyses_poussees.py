@@ -6,8 +6,11 @@ from wordcloud import WordCloud
 import nltk
 from nltk.corpus import stopwords
 from pages.page_analyses_simples import Page_analyse_simples
+import decorator_log
+
 try: st.set_page_config(layout="wide") 
 except: pass
+
 class Page_analyse_poussee:
     
     def __init__(self, df):
@@ -34,7 +37,6 @@ class Page_analyse_poussee:
         st.markdown("---")
 
     def worcloud(self, column="Motif du rappel"):
-        
         col1, col2 = st.columns(2)
         with col1:
             new_stop_words = st.text_input("Ajotuez un stop word (séparés par des ,):")
@@ -49,6 +51,7 @@ class Page_analyse_poussee:
         wordcloud = self.generate_wordcloud(self.df, column)
         return wordcloud
     
+    @decorator_log.log_execution_time
     def generate_wordcloud(self, df, column):
         # Ensure the necessary NLTK data is downloaded (stopwords)
         try:

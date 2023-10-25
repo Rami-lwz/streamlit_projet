@@ -6,16 +6,19 @@ import seaborn as sns
 from df_cleaner import get_cleaned_df
 import altair as alt
 import random 
+import decorator_log
+
 try: st.set_page_config(layout="wide") 
 except: pass
+
 class Page_analyse_simples: 
+    
     def __init__(self, df):
         self.df = df
+    
     def app(self, sidebar=True):
-        st.title('Page d\'analyses simples')  
-        
+        st.title('Page d\'analyses simples')          
         self.df["Date de publication"] = pd.to_datetime(self.df["Date de publication"])
-        
         if sidebar : selected_categ = self.sidebar_sliders()
         st.markdown("---")
         st.metric(label="Nombre de produits observés", value=(self.df.shape[0]))
@@ -39,13 +42,15 @@ class Page_analyse_simples:
             st.dataframe(df_show)
         else :
             st.dataframe(self.df)
-            
+    
+    @decorator_log.log_execution_time
     def bar_sousCategories(self,categorie):
         df = self.df.copy()
         df=df[df['Catégorie de produit']==categorie][['Sous-catégorie de produit']]
         group_by_sous_categorie=df.groupby('Sous-catégorie de produit').size()
         st.bar_chart(group_by_sous_categorie)
-    
+        
+    @decorator_log.log_execution_time
     def histo_recalls_per_month(self):
         df = self.df
         # Generate a new column to assist with plotting
@@ -61,7 +66,8 @@ class Page_analyse_simples:
 
         # Display the chart
         st.bar_chart(chart_data)
-
+        
+    @decorator_log.log_execution_time
     def retours_par_marque(self):
         df = self.df
 
@@ -134,7 +140,8 @@ class Page_analyse_simples:
             self.df = self.df[self.df['Nom de la marque du produit'].isin(selected_brands)]
         
         return selected_categories
-
+    
+    @decorator_log.log_execution_time
     def pie_categorie(self):
         df = self.df  # Assuming self.df is your DataFrame
 
@@ -169,7 +176,8 @@ class Page_analyse_simples:
 
         # Display the chart in Streamlit
         st.altair_chart(pie_chart, use_container_width=True)
-
+        
+    @decorator_log.log_execution_time
     def visu_images(self):
         valid_image_links_df = self.df[self.df["Liens vers les images"].notna()]
 
@@ -193,8 +201,6 @@ class Page_analyse_simples:
         with col1:
             image_link = selected_row["Liens vers les images"].split(' ')[0]
             st.image(image_link, caption=selected_row["Noms des modèles ou références"], width=None, use_column_width="auto")
-
-
 
         with col2:
             st.write("**Additional Info:**")
