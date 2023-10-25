@@ -124,13 +124,16 @@ class Page_analyse_simples:
             tooltip=['Brand', 'Counts']
         ).properties(
             title='',
-            width=600,  # You can adjust dimensions as needed
-            height=400
+            width=300,  # You can adjust dimensions as needed
+            height=600
         ).configure_axis(
             labelFontSize=12,
             titleFontSize=14
         ).configure_title(
             fontSize=16
+        ).configure_legend(
+            labelFontSize=12,
+            titleFontSize=14
         )
 
         # Use Streamlit to render the plot
@@ -150,13 +153,16 @@ class Page_analyse_simples:
             tooltip=['Nature', 'Counts']
         ).properties(
             title="",
-            width=600,
-            height=400
+            width=300,
+            height=600
         ).configure_axis(
             labelFontSize=12,
             titleFontSize=14
         ).configure_title(
             fontSize=16
+        ).configure_legend(
+            labelFontSize=12,
+            titleFontSize=14
         )
         st.altair_chart(nature_chart, use_container_width=True)
     
@@ -222,7 +228,7 @@ class Page_analyse_simples:
         # Create a pie chart
         pie_chart = alt.Chart(categorie_counts).mark_arc(
             innerRadius=50,  # 'Donut' shape
-            outerRadius=100,
+            outerRadius=250,
             stroke='white'
         ).encode(
             theta='Percentage:Q',  # Use the 'Percentage' field for pie segments
@@ -231,14 +237,16 @@ class Page_analyse_simples:
         ).properties(
             title='Distribution par '+ categorie + ' (%)',
             width=300,
-            height=300
+            height=600
         ).configure_title(
             fontSize=20
         ).configure_legend(
             labelFontSize=12,
             titleFontSize=14
+        ).configure_legend(
+            labelFontSize=12,
+            titleFontSize=14
         )
-
         # Display the chart in Streamlit
         st.altair_chart(pie_chart, use_container_width=True)
         
