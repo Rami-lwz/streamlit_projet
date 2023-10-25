@@ -7,6 +7,9 @@ import nltk
 from nltk.corpus import stopwords
 from pages.page_1__analyses_simples import Page_analyse_simples
 import decorator_log
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.cluster import KMeans
+import numpy as np
 
 try: st.set_page_config(layout="wide") 
 except: pass
@@ -20,10 +23,65 @@ class Page_wordcloud:
     def app(self, sidebar=True):
         st.title('Page d\'IA')  
         st.markdown("---")
-        col1, col2 = st.columns([2, 1])
+        col1, col2, col3 = st.columns([1,2,1])
         self.df["Date de publication"] = pd.to_datetime(self.df["Date de publication"])
+        self.sidebar_sliders()
+        num_clusters = 5
+        cluster_distrib, cluster_terms_df = self.IA(num_clusters=num_clusters)
+        with col1:
+            st.dataframe(cluster_distrib)
+        with col2:
+            st.dataframe(cluster_terms_df)
+        cols = st.columns(5)
         
-    
+        st.markdown('# Word clouds for each cluster\n')
+
+        for i in range(num_clusters):
+            wordcloud = WordCloud(width=800, height=400, background_color='white').generate(' '.join(cluster_terms_df[f'Cluster {i}']))
+            
+            # Display the generated image in Streamlit:
+            with cols[i]:
+                st.markdown(f'## Cluster {i}')
+                st.image(wordcloud.to_array())
+    def IA(self, num_clusters):
+        stop_words_french = [
+            "alors", "au", "aucuns", "aussi", "autre", "avant", "avec", "avoir", "bon", "car", "ce", "cela", "ces", "ceux",
+            "chaque", "ci", "comme", "comment", "dans", "un", "une", "dont", "de", "non", "des", "du", "dedans", "dehors", "depuis", "devrait", "doit", "donc",
+            "dos", "début", "elle", "elles", "en", "encore", "essai", "est", "et", "eu", "fait", "faites", "fois", "font",
+            "hors", "ici", "il", "ils", "je", "juste", "la", "le", "les", "leur", "là", "ma", "maintenant", "mais", "mes",
+            "mine", "moins", "mon", "mot", "même", "ni", "nommés", "notre", "nous", "ou", "où", "par", "parce", "pas", "peut",
+            "peu", "plupart", "pour", "pourquoi", "quand", "que", "quel", "quelle", "quelles", "quels", "qui", "sa", "sans",
+            "ses", "seulement", "si", "sien", "son", "sont", "sous", "soyez", "sujet", "sur", "ta", "tandis", "tellement",
+            "tels", "tes", "ton", "tous", "tout", "trop", "très", "tu", "voient", "vont", "votre", "vous", "vu", "ça", "étaient",
+            "état", "étions", "été", "être"
+        ]
+        self.df['Motif du rappel'] = self.df['Motif du rappel'].fillna('')
+        self.df['Risques encourus par le consommateur'] = self.df['Risques encourus par le consommateur'].fillna('')
+        self.df['combined_text'] = self.df['Motif du rappel'] + " " + self.df['Risques encourus par le consommateur']
+        vectorizer = TfidfVectorizer(max_features=1000,  # considering top 1000 features
+                                    stop_words=stop_words_french,  # removing stop words
+                                    use_idf=True)
+        # Transforming the combined text self.df to a matrix of TF-IDF features
+        tfidf_matrix = vectorizer.fit_transform(self.df['combined_text'])
+        # Performing K-means clustering
+        km = KMeans(n_clusters=num_clusters, init='k-means++', random_state=42)
+        _ = km.fit(tfidf_matrix)
+        # Getting the clustering labels
+        clusters = km.labels_.tolist()
+        # Adding a new column to the original self.dfframe with the cluster information
+        self.df['Cluster'] = clusters
+        # Counting the number of documents per cluster to understand the distribution
+        cluster_distribution = self.df['Cluster'].value_counts().sort_index()
+        # Prepare a self.dfframe for the top terms per cluster
+        order_centroids = km.cluster_centers_.argsort()[:, ::-1]
+        terms = vectorizer.get_feature_names_out()
+        # Save the top 10 words for each cluster
+        cluster_terms = {}
+        for i in range(num_clusters):
+            top_terms = [terms[ind] for ind in order_centroids[i, :10]]
+            cluster_terms[f"Cluster {i}"] = top_terms
+        cluster_terms_df = pd.DataFrame(cluster_terms)
+        return cluster_distribution, cluster_terms_df
     
     def sidebar_sliders(self):
         min_date = self.df["Date de publication"].min().date()
