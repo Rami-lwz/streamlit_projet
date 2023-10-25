@@ -31,11 +31,13 @@ class Page_analyse_simples:
             st.markdown("## Nombre de retours par Marque")
             self.retours_par_marque()
         else: st.markdown("## Distribution de la Nature Juridique du rappel pour " + selected_brands[0]); self.nature_juridique_marque_simple()
+        st.markdown("## Distribution de la Nature Juridique du rappel")
+        self.pie('Nature juridique du rappel')
         st.markdown("---")
         if len(selected_categ) == 1:
-            st.markdown('## Distribution par Sous-catégories de'+ selected_categ[0] + ' (%)')
-            self.pie_categorie('Sous-catégorie de produit')
-        else: st.markdown('## Distribution par Catégories'); self.pie_categorie('Catégorie de produit')
+            st.markdown('## Distribution par Sous-catégories de '+ selected_categ[0] + ' (%)')
+            self.pie('Sous-catégorie de produit')
+        else: st.markdown('## Distribution par Catégories'); self.pie('Catégorie de produit')
         st.markdown("---")
         if len(selected_categ) == 1:
             st.markdown("## Durée entre commercialisation et rappel pour " + selected_categ[0])
@@ -149,9 +151,7 @@ class Page_analyse_simples:
         nature_chart = alt.Chart(nature_counts).mark_bar().encode(
             x=alt.X('Counts:Q', title='Nombre de retours'),
             y=alt.Y('Nature:N', sort='-x', title='Nature juridique du rappel'),
-            tooltip=['Nature', 'Counts'],
-            color=alt.Color(f'Nature juridique du rappel:N',legend=alt.Legend(title=f'Nature juridique du rappel', orient='left', labelFontSize=18, titleFontSize=18, symbolSize=500, symbolType='circle')),
-            
+            tooltip=['Nature', 'Counts'],            
         ).properties(
             title="",
             width=300,
@@ -161,9 +161,6 @@ class Page_analyse_simples:
             titleFontSize=14
         ).configure_title(
             fontSize=16
-        ).configure_legend(
-            labelFontSize=12,
-            titleFontSize=14
         )
         st.altair_chart(nature_chart, use_container_width=True)
     @decorator_log.log_execution_time
@@ -214,7 +211,7 @@ class Page_analyse_simples:
         return selected_categories, selected_brands
     
     @decorator_log.log_execution_time
-    def pie_categorie(self, categorie):
+    def pie(self, categorie):
         df = self.df  # Assuming self.df is your DataFrame
 
         # First, prepare the data for the pie chart.
