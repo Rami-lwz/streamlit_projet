@@ -200,6 +200,11 @@ class Page_analyse_poussee:
         # Display the chart in Streamlit
         st.altair_chart(pie_chart, use_container_width=True)
 
+   
+    
+
+
+
 if __name__ == "__main__":
     p = Page_analyse_poussee(get_cleaned_df())
     print(p.custom_stop_words)

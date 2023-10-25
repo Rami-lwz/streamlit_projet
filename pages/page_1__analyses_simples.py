@@ -94,26 +94,27 @@ class Page_analyse_simples:
     @decorator_log.log_execution_time
     def retours_par_marque(self):
         df = self.df
-
+        #x1 nb retourn par nature juridique = "volontaire" et x2  "obligatoire"
         # Prepare the data
-        product_brand_counts = df['Nom de la marque du produit'].value_counts().reset_index()
-        product_brand_counts.columns = ['Brand', 'Counts']
-        product_brand_counts = product_brand_counts.sort_values(by='Counts', ascending=False).head(10)
+        product_brand_counts=df.groupby(['Nom de la marque du produit','Nature juridique du rappel']).size().reset_index(name='counts')
+        product_brand_counts.columns = ['Brand','Nat', 'Counts']
+        product_brand_counts = product_brand_counts.sort_values(by='Counts', ascending=False).head(30)
 
         # Create an Altair chart object
         chart = alt.Chart(product_brand_counts).mark_bar().encode(
             x=alt.X('Counts:Q', title='Nombre de retours'),
-            y=alt.Y('Brand:N', sort='-x', title='Brand'),  # sorting by '-x' sorts based on the 'x' axis in descending order
-            tooltip=['Brand', 'Counts']
+            y=alt.Y('Brand:N', sort='-x', title='Brand'), # sorting by '-x' sorts based on the 'x' axis in descending order
+            color=alt.Color('Nat:N', legend=alt.Legend(title="Nature juridique du rappel", orient='left', labelFontSize=18, titleFontSize=18, symbolSize=500, symbolType='circle')),
+            tooltip=['Brand','Nat', 'Counts']
         ).properties(
             title='Nombre de retours par Marque',
             width=600,  # You can adjust dimensions as needed
-            height=400
+            height=600
         ).configure_axis(
-            labelFontSize=12,
-            titleFontSize=14
+            labelFontSize=14,
+            titleFontSize=16
         ).configure_title(
-            fontSize=16
+            fontSize=18
         )
 
         # Use Streamlit to render the plot
