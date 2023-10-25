@@ -7,6 +7,9 @@ import nltk
 from nltk.corpus import stopwords
 from pages.page_1__analyses_simples import Page_analyse_simples
 import decorator_log
+import seaborn as sns
+import altair as alt
+
 
 try: st.set_page_config(layout="wide") 
 except: pass
@@ -36,12 +39,19 @@ class Page_analyse_poussee:
         st.metric(label="Nombre de produits observés", value=(self.df.shape[0]))
         st.markdown("---")
         self.plot_duration_scatter()
+        st.markdown("---")
+        self.hist_wordCloud()
+        st.markdown("---")
+        self.pie("Motif du rappel")
+
+
         
     @decorator_log.log_execution_time
     def worcloud(self, column="Motif du rappel"):
+        st.write("Nuage de mot contenu dans le", column)
         col1, col2 = st.columns(2)
         with col1:
-            new_stop_words = st.text_input("Ajotuez un stop word (séparés par des ,):")
+            new_stop_words = st.text_input("Ajoutez un stop word (séparés par des ,):")
         with col2:
             new_discrim_words = st.text_input("Ajouter des mots pout filtrer la colonne (séparés par des ,):")
         if new_discrim_words:
@@ -72,6 +82,7 @@ class Page_analyse_poussee:
     
     @decorator_log.log_execution_time
     def plot_duration_scatter(self):
+        st.write("Durée entre commercialisation et rappel par categorie")
         self.df[['Début','Fin']] = self.df['Date début/Fin de commercialisation'].str.replace('Du ', '', regex=True).str.split(' au ', expand=True)
         self.df['Date début commercialisation'] = pd.to_datetime(self.df['Début'], dayfirst=True, errors='coerce')
         self.df['Date fin commercialisation'] = pd.to_datetime(self.df['Fin'], dayfirst=True, errors='coerce')
@@ -139,6 +150,55 @@ class Page_analyse_poussee:
         # If specific brands are selected, filter the DataFrame
         if selected_brands:
             self.df = self.df[self.df['Nom de la marque du produit'].isin(selected_brands)]
+
+    @decorator_log.log_execution_time
+    def hist_wordCloud(self, column="Motif du rappel"):
+        st.write(f"Diagramme en barre des vingt mots les plus fréquents de la colonne {column}")
+
+        # Obtenir les valeurs triées par ordre décroissant
+        word_counts = self.df[column].value_counts().sort_values(ascending=False)
+
+        # Sélectionner les 20 mots les plus fréquents (ou moins si moins de 20 mots uniques)
+        top_words = word_counts.head(20)
+
+        # Créer un graphique à barres en inversant les axes
+        st.bar_chart(top_words)
+        
+    @decorator_log.log_execution_time
+    def pie(self,column="Catégorie de produit"):
+        df = self.df  # Assuming self.df is your DataFrame
+
+        # First, prepare the data for the pie chart.
+        # Group the data by category and count the records in each.
+        categorie_counts = df[column].value_counts().reset_index()
+        categorie_counts.columns = [column, 'Counts']
+
+        # Calculate the percentage for each category
+        total = categorie_counts['Counts'].sum()  # Sum of all counts (total number of records)
+        categorie_counts['Percentage'] = (categorie_counts['Counts'] / total) * 100  # Calculate percentage
+
+        # Create a pie chart
+        pie_chart = alt.Chart(categorie_counts).mark_arc(
+            innerRadius=50,  # 'Donut' shape
+            outerRadius=250,
+            stroke='white'
+        ).encode(
+            theta='Percentage:Q',  # Use the 'Percentage' field for pie segments
+            color=alt.Color(f'{column}:N',legend=alt.Legend(title=f'{column}', orient='left', labelFontSize=18, titleFontSize=18, symbolSize=500, symbolType='circle')),
+            tooltip=[alt.Tooltip(f'{column}:N'), alt.Tooltip('Percentage:Q', format='.2f', title='Percentage')]  # Show percentage on hover
+        ).properties(
+            title=f'Distribution des rappels par {column}  (%)',
+            width=300,
+            height=600
+        ).configure_title(
+            fontSize=20
+        )
+
+        # Display the chart in Streamlit
+        st.altair_chart(pie_chart, use_container_width=True)
+
+        # Display the chart in Streamlit
+        st.altair_chart(pie_chart, use_container_width=True)
 
 if __name__ == "__main__":
     p = Page_analyse_poussee(get_cleaned_df())

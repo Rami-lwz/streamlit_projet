@@ -25,15 +25,20 @@ class Page_analyse_simples:
         st.markdown("---")
         self.visu_images()
         st.markdown("---")
-        self.histo_recalls_per_month_or_day()
+        self.line_recalls_per_month_or_day()
         st.markdown("---")
         if len(selected_brands) != 1:
             self.retours_par_marque()
         else: self.nature_juridique_marque_simple()
+        self.pie('Nature juridique du rappel')
         st.markdown("---")
         if len(selected_categ) == 1:
-            self.bar_sousCategories(selected_categ[0])
-        else: self.pie_categorie()
+            self.pie('Sous-catégorie de produit')
+        else:
+            self.pie('Catégorie de produit')
+        st.markdown("---")
+
+
         st.markdown("---")
         selected_columns = st.multiselect("Colonnes", self.df.columns)
         try : 
@@ -53,7 +58,7 @@ class Page_analyse_simples:
         st.bar_chart(group_by_sous_categorie)
         
     @decorator_log.log_execution_time
-    def histo_recalls_per_month_or_day(self):
+    def line_recalls_per_month_or_day(self):
         df = self.df
         # Generate a new column for month_year and day granularity
         df["month_year"] = df["Date de publication"].dt.to_period('M')  # This creates a PeriodIndex for months
@@ -185,13 +190,13 @@ class Page_analyse_simples:
         return selected_categories, selected_brands
     
     @decorator_log.log_execution_time
-    def pie_categorie(self):
+    def pie(self,column="Catégorie de produit"):
         df = self.df  # Assuming self.df is your DataFrame
 
         # First, prepare the data for the pie chart.
         # Group the data by category and count the records in each.
-        categorie_counts = df['Catégorie de produit'].value_counts().reset_index()
-        categorie_counts.columns = ['Catégorie de produit', 'Counts']
+        categorie_counts = df[column].value_counts().reset_index()
+        categorie_counts.columns = [column, 'Counts']
 
         # Calculate the percentage for each category
         total = categorie_counts['Counts'].sum()  # Sum of all counts (total number of records)
@@ -200,21 +205,18 @@ class Page_analyse_simples:
         # Create a pie chart
         pie_chart = alt.Chart(categorie_counts).mark_arc(
             innerRadius=50,  # 'Donut' shape
-            outerRadius=100,
+            outerRadius=250,
             stroke='white'
         ).encode(
             theta='Percentage:Q',  # Use the 'Percentage' field for pie segments
-            color=alt.Color('Catégorie de produit:N', legend=alt.Legend(title="Catégories de produits")),
-            tooltip=[alt.Tooltip('Catégorie de produit:N'), alt.Tooltip('Percentage:Q', format='.2f', title='Percentage')]  # Show percentage on hover
+            color=alt.Color(f'{column}:N',legend=alt.Legend(title=f'{column}', orient='left', labelFontSize=18, titleFontSize=18, symbolSize=500, symbolType='circle')),
+            tooltip=[alt.Tooltip(f'{column}:N'), alt.Tooltip('Percentage:Q', format='.2f', title='Percentage')]  # Show percentage on hover
         ).properties(
-            title='Distribution by Category (%)',
+            title=f'Distribution des rappels par {column}  (%)',
             width=300,
-            height=300
+            height=600
         ).configure_title(
             fontSize=20
-        ).configure_legend(
-            labelFontSize=12,
-            titleFontSize=14
         )
 
         # Display the chart in Streamlit
