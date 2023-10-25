@@ -4,3 +4,4 @@ venv/Scripts/python.exe
 venv/*
 methods_exec_logs.log
 *.log
+methods_exec_logs.log

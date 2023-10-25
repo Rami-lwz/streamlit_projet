@@ -123,6 +123,7 @@ class Page_analyse_simples:
             x=alt.X('Counts:Q', title='Nombre de retours'),
             y=alt.Y('Brand:N', sort='-x', title='Brand'),  # sorting by '-x' sorts based on the 'x' axis in descending order
             tooltip=['Brand', 'Counts']
+            
         ).properties(
             title='',
             width=300,  # You can adjust dimensions as needed
@@ -151,7 +152,9 @@ class Page_analyse_simples:
         nature_chart = alt.Chart(nature_counts).mark_bar().encode(
             x=alt.X('Counts:Q', title='Nombre de retours'),
             y=alt.Y('Nature:N', sort='-x', title='Nature juridique du rappel'),
-            tooltip=['Nature', 'Counts']
+            tooltip=['Nature', 'Counts'],
+            color=alt.Color(f'Nature juridique du rappel:N',legend=alt.Legend(title=f'Nature juridique du rappel', orient='left', labelFontSize=18, titleFontSize=18, symbolSize=500, symbolType='circle')),
+            
         ).properties(
             title="",
             width=300,
@@ -233,8 +236,9 @@ class Page_analyse_simples:
             stroke='white'
         ).encode(
             theta='Percentage:Q',  # Use the 'Percentage' field for pie segments
-            color=alt.Color(categorie+':N', legend=alt.Legend(title="Catégories de produits")),
-            tooltip=[alt.Tooltip(categorie+ ':N'), alt.Tooltip('Percentage:Q', format='.2f', title='Percentage')]  # Show percentage on hover
+            # color=alt.Color(categorie+':N', legend=alt.Legend(title="Catégories de produits")),
+            tooltip=[alt.Tooltip(categorie+ ':N'), alt.Tooltip('Percentage:Q', format='.2f', title='Percentage')],  # Show percentage on hover
+            color=alt.Color(f'{categorie}:N',legend=alt.Legend(title=f'{categorie}', orient='left', labelFontSize=18, titleFontSize=18, symbolSize=500, symbolType='circle')),
         ).properties(
             title='',
             width=300,

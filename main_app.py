@@ -4,11 +4,9 @@ import pandas as pd
 import os
 from df_cleaner import get_cleaned_df
 from pages.page_1__analyses_simples import Page_analyse_simples
-# from pages.page_2__wordcloud import Page_wordcloud
 try: st.set_page_config(layout="wide") 
 except: pass
 
-# Function to manage navigation
 def app(df):
     st.title('Etude sur les Rappels de produits depuis 2018')
     st.markdown("Afficher la donnée") 
@@ -19,7 +17,6 @@ def app(df):
         df = df[df[selected_columns].apply(lambda row: row.astype(str).str.contains(search_input, case=False).any(), axis=1)]
 
     st.metric(label="Nombre de produits observés", value=(df.shape[0]))
-    # Show df
     col1, col2 = st.columns([7, 5])
     if len(selected_columns) == 0:
         with col1:  st.dataframe(df)
@@ -29,6 +26,5 @@ def app(df):
         with col1 : st.dataframe(df_show)
         with col2 : Page_analyse_simples(df).visu_images()
 
-# Run the app
 if __name__ == "__main__":
     app(get_cleaned_df())

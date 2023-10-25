@@ -123,7 +123,6 @@ class Page_analyse_poussee:
         unique_brands = self.df['Nom de la marque du produit'].value_counts().index.unique()
         selected_brands = st.sidebar.multiselect('Select Nom de la marque du produit', options=unique_brands)
 
-        # If specific brands are selected, filter the DataFrame
         if selected_brands:
             self.df = self.df[self.df['Nom de la marque du produit'].isin(selected_brands)]
 

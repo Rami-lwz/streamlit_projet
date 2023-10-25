@@ -98,7 +98,6 @@ def get_cleaned_df():
         ).rename(
                 {"﻿Référence Fiche": "Référence Fiche"}, axis=1
         )
-        # list columns which contain NaN values
         df = fillnas(df, {"Nature juridique du rappel": "Volontaire (sans arrêté préfectoral)",
                     "Catégorie de produit": "Non Catégorié",
                     "Sous-catégorie de produit": "Non Catégorisé",

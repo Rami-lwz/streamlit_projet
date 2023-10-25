@@ -39,7 +39,6 @@ class Page_wordcloud:
         for i in range(num_clusters):
             wordcloud = WordCloud(width=1000, height=800, background_color='black', colormap=colormaps[i]).generate(' '.join(cluster_terms_df[f'Cluster {i}']))
             
-            # Display the generated image in Streamlit:
             with cols[i]:
                 st.markdown(f'## Cluster {i}')
                 st.image(wordcloud.to_array())
@@ -62,21 +61,21 @@ class Page_wordcloud:
         vectorizer = TfidfVectorizer(max_features=1000,  # considering top 1000 features
                                     stop_words=stop_words_french,  # removing stop words
                                     use_idf=True)
-        # Transforming the combined text self.df to a matrix of TF-IDF features
+        # Transformation des textes combinés en une matrice de fonctionnalités TF-IDF
         tfidf_matrix = vectorizer.fit_transform(self.df['combined_text'])
-        # Performing K-means clustering
+        # Effectuer un clustering K-means
         km = KMeans(n_clusters=num_clusters, init='k-means++', random_state=42)
         _ = km.fit(tfidf_matrix)
-        # Getting the clustering labels
+        # Obtenir les étiquettes de regroupement
         clusters = km.labels_.tolist()
-        # Adding a new column to the original self.dfframe with the cluster information
+        # Ajout d'une nouvelle colonne au self.dfframe d'origine avec les informations de cluster
         self.df['Cluster'] = clusters
-        # Counting the number of documents per cluster to understand the distribution
+        # Comptage du nombre de documents par cluster pour comprendre la distribution
         cluster_distribution = self.df['Cluster'].value_counts().sort_index()
-        # Prepare a self.dfframe for the top terms per cluster
+        # Préparer un self.dfframe pour les meilleurs termes par cluster
         order_centroids = km.cluster_centers_.argsort()[:, ::-1]
         terms = vectorizer.get_feature_names_out()
-        # Save the top 10 words for each cluster
+        # Sauvegarder les 10 premiers mots pour chaque cluster
         cluster_terms = {}
         for i in range(num_clusters):
             top_terms = [terms[ind] for ind in order_centroids[i, :10]]
