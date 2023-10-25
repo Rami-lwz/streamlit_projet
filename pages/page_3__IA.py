@@ -11,79 +11,20 @@ import decorator_log
 try: st.set_page_config(layout="wide") 
 except: pass
 
-class Page_analyse_poussee:
+class Page_wordcloud:
     
     def __init__(self, df):
         self.df = df
         self.custom_stop_words = set()
 
     def app(self, sidebar=True):
-        st.title('Page d\'analyses poussées')  
+        st.title('Page d\'IA')  
         st.markdown("---")
-
-        
         col1, col2 = st.columns([2, 1])
         self.df["Date de publication"] = pd.to_datetime(self.df["Date de publication"])
-        if sidebar : self.sidebar_sliders()
-
         
-        with col1:
-            st.image(self.worcloud().to_array())
-            # st.image(self.generate_wordcloud(df= self.df, column="Préconisations sanitaires").to_array())
-        
-        with col2:  
-            Page_analyse_simples(self.df).visu_images() 
-        st.metric(label="Nombre de produits observés", value=(self.df.shape[0]))
-        st.markdown("---")
-        self.plot_duration_scatter()
-        
-    @decorator_log.log_execution_time
-    def worcloud(self, column="Motif du rappel"):
-        col1, col2 = st.columns(2)
-        with col1:
-            new_stop_words = st.text_input("Ajotuez un stop word (séparés par des ,):")
-        with col2:
-            new_discrim_words = st.text_input("Ajouter des mots pout filtrer la colonne (séparés par des ,):")
-        if new_discrim_words:
-            self.df = self.df[self.df[column].str.contains(new_discrim_words, case=False)]
-        if new_stop_words:
-            words_list = [word.strip().lower() for word in new_stop_words.split(',')]
-            _ = self.custom_stop_words.update(words_list)
-
-        wordcloud = self.generate_wordcloud(self.df, column)
-        return wordcloud
     
-    @decorator_log.log_execution_time
-    def generate_wordcloud(self, df, column):
-        try:
-            nltk.data.find('corpora/stopwords')
-        except LookupError:
-            nltk.download('stopwords')
-        custom_stop_words = self.custom_stop_words
-        stopwords_fr = set(stopwords.words('french'))
-
-        _ = stopwords_fr.update(custom_stop_words)
-        # tokenizer
-        text = ' '.join(df[column].dropna())
-       
-        wordcloud = WordCloud(stopwords=stopwords_fr, width=1600, height=800).generate(text)
-
-        return wordcloud    
     
-    @decorator_log.log_execution_time
-    def plot_duration_scatter(self):
-        self.df[['Début','Fin']] = self.df['Date début/Fin de commercialisation'].str.replace('Du ', '', regex=True).str.split(' au ', expand=True)
-        self.df['Date début commercialisation'] = pd.to_datetime(self.df['Début'], dayfirst=True, errors='coerce')
-        self.df['Date fin commercialisation'] = pd.to_datetime(self.df['Fin'], dayfirst=True, errors='coerce')
-
-        # Calculate duration between the start and end of marketing
-        self.df['Durée entre commercialisation et rappel'] = (self.df['Date fin commercialisation'] - self.df['Date début commercialisation']).dt.days
-
-        # Remove rows where 'Durée entre commercialisation et rappel' is NaN
-        self.df = self.df[self.df['Durée entre commercialisation et rappel'].notnull()]
-
-        st.scatter_chart(self.df, x='Durée entre commercialisation et rappel', y='Catégorie de produit')
-
     def sidebar_sliders(self):
         min_date = self.df["Date de publication"].min().date()
         max_date = self.df["Date de publication"].max().date()
@@ -141,6 +82,6 @@ class Page_analyse_poussee:
             self.df = self.df[self.df['Nom de la marque du produit'].isin(selected_brands)]
 
 if __name__ == "__main__":
-    p = Page_analyse_poussee(get_cleaned_df())
+    p = Page_wordcloud(get_cleaned_df())
     print(p.custom_stop_words)
     p.app()

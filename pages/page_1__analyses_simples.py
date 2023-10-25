@@ -28,12 +28,20 @@ class Page_analyse_simples:
         self.histo_recalls_per_month_or_day()
         st.markdown("---")
         if len(selected_brands) != 1:
+            st.markdown("## Nombre de retours par Marque")
             self.retours_par_marque()
-        else: self.nature_juridique_marque_simple()
+        else: st.markdown("## Distribution de la Nature Juridique du rappel pour " + selected_brands[0]); self.nature_juridique_marque_simple()
         st.markdown("---")
         if len(selected_categ) == 1:
-            self.bar_sousCategories(selected_categ[0])
-        else: self.pie_categorie()
+            self.pie_categorie('Sous-catégorie de produit')
+        else: self.pie_categorie('Catégorie de produit')
+        st.markdown("---")
+        if len(selected_categ) == 1:
+            st.markdown("## Durée entre commercialisation et rappel pour " + selected_categ[0])
+            self.plot_duration_scatter('Sous-catégorie de produit')
+        else:
+            st.markdown("## Durée entre commercialisation et rappel par Catégorie")
+            self.plot_duration_scatter('Catégorie de produit')
         st.markdown("---")
         selected_columns = st.multiselect("Colonnes", self.df.columns)
         try : 
@@ -44,7 +52,6 @@ class Page_analyse_simples:
             st.dataframe(df_show)
         else :
             st.dataframe(self.df)
-    
     @decorator_log.log_execution_time
     def bar_sousCategories(self,categorie):
         df = self.df.copy()
@@ -61,8 +68,9 @@ class Page_analyse_simples:
 
         # Determine if we need a monthly or daily plot
         unique_month_years = df["month_year"].nunique()
-
+        st.write("## Nombre de retours par mois")
         if unique_month_years > 1:
+            st.write("### À la maille Mensuelle")
             # Monthly plot logic remains the same
             count_df = df["month_year"].value_counts().rename_axis('month_year').reset_index(name='counts')
             count_df['month_year'] = count_df['month_year'].dt.strftime('%Y-%m')  # Convert Period to string
@@ -74,6 +82,7 @@ class Page_analyse_simples:
             # Display the monthly chart
             st.line_chart(chart_data)
         else:
+            st.write("### À la maille Journalière")
             # If only one month is selected, switch to daily granularity
             count_day_df = df["day"].value_counts().rename_axis('day').reset_index(name='counts')
             count_day_df['day'] = count_day_df['day'].dt.strftime('%Y-%m-%d')  # Convert Period to string
@@ -85,7 +94,20 @@ class Page_analyse_simples:
             # Display the daily chart
             st.line_chart(chart_data_day)
 
-        
+    @decorator_log.log_execution_time
+    def plot_duration_scatter(self, categorie):
+        self.df[['Début','Fin']] = self.df['Date début/Fin de commercialisation'].str.replace('Du ', '', regex=True).str.split(' au ', expand=True)
+        self.df['Date début commercialisation'] = pd.to_datetime(self.df['Début'], dayfirst=True, errors='coerce')
+        self.df['Date fin commercialisation'] = pd.to_datetime(self.df['Fin'], dayfirst=True, errors='coerce')
+
+        # Calculate duration between the start and end of marketing
+        self.df['Durée entre commercialisation et rappel'] = (self.df['Date fin commercialisation'] - self.df['Date début commercialisation']).dt.days
+
+        # Remove rows where 'Durée entre commercialisation et rappel' is NaN
+        self.df = self.df[self.df['Durée entre commercialisation et rappel'].notnull()]
+
+        st.scatter_chart(self.df, x='Durée entre commercialisation et rappel', y=categorie)
+
     @decorator_log.log_execution_time
     def retours_par_marque(self):
         df = self.df
@@ -101,7 +123,7 @@ class Page_analyse_simples:
             y=alt.Y('Brand:N', sort='-x', title='Brand'),  # sorting by '-x' sorts based on the 'x' axis in descending order
             tooltip=['Brand', 'Counts']
         ).properties(
-            title='Nombre de retours par Marque',
+            title='',
             width=600,  # You can adjust dimensions as needed
             height=400
         ).configure_axis(
@@ -127,7 +149,7 @@ class Page_analyse_simples:
             y=alt.Y('Nature:N', sort='-x', title='Nature juridique du rappel'),
             tooltip=['Nature', 'Counts']
         ).properties(
-            title=f"Nature juridique du rappel pour {single_brand_df['Nom de la marque du produit'].unique()[0]}",
+            title="",
             width=600,
             height=400
         ).configure_axis(
@@ -185,13 +207,13 @@ class Page_analyse_simples:
         return selected_categories, selected_brands
     
     @decorator_log.log_execution_time
-    def pie_categorie(self):
+    def pie_categorie(self, categorie):
         df = self.df  # Assuming self.df is your DataFrame
 
         # First, prepare the data for the pie chart.
         # Group the data by category and count the records in each.
-        categorie_counts = df['Catégorie de produit'].value_counts().reset_index()
-        categorie_counts.columns = ['Catégorie de produit', 'Counts']
+        categorie_counts = df[categorie].value_counts().reset_index()
+        categorie_counts.columns = [categorie, 'Counts']
 
         # Calculate the percentage for each category
         total = categorie_counts['Counts'].sum()  # Sum of all counts (total number of records)
@@ -204,10 +226,10 @@ class Page_analyse_simples:
             stroke='white'
         ).encode(
             theta='Percentage:Q',  # Use the 'Percentage' field for pie segments
-            color=alt.Color('Catégorie de produit:N', legend=alt.Legend(title="Catégories de produits")),
-            tooltip=[alt.Tooltip('Catégorie de produit:N'), alt.Tooltip('Percentage:Q', format='.2f', title='Percentage')]  # Show percentage on hover
+            color=alt.Color(categorie+':N', legend=alt.Legend(title="Catégories de produits")),
+            tooltip=[alt.Tooltip(categorie+ ':N'), alt.Tooltip('Percentage:Q', format='.2f', title='Percentage')]  # Show percentage on hover
         ).properties(
-            title='Distribution by Category (%)',
+            title='Distribution par '+ categorie + ' (%)',
             width=300,
             height=300
         ).configure_title(
