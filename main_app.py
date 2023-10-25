@@ -13,9 +13,7 @@ def app(df):
     st.title('Etude sur les Rappels de produits depuis 2018')
     st.markdown("Afficher la donnée") 
 
-    # Search bar
-
-    selected_columns = st.multiselect("Colonnes", df.columns)
+    selected_columns = st.multiselect("Colonnes", df.columns, default=df.columns.tolist())
     search_input = st.text_input("Barre de recherche", "", placeholder='🔍  |      Filtrer le DF ')
     if search_input:
         df = df[df[selected_columns].apply(lambda row: row.astype(str).str.contains(search_input, case=False).any(), axis=1)]

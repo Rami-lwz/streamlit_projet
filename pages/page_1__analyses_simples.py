@@ -15,7 +15,7 @@ class Page_analyse_simples:
     
     def __init__(self, df):
         self.df = df
-    
+    @decorator_log.log_execution_time
     def app(self, sidebar=True):
         st.title('Page d\'analyses simples')          
         self.df["Date de publication"] = pd.to_datetime(self.df["Date de publication"])
@@ -33,8 +33,9 @@ class Page_analyse_simples:
         else: st.markdown("## Distribution de la Nature Juridique du rappel pour " + selected_brands[0]); self.nature_juridique_marque_simple()
         st.markdown("---")
         if len(selected_categ) == 1:
+            st.markdown('## Distribution par Sous-catégories de'+ selected_categ[0] + ' (%)')
             self.pie_categorie('Sous-catégorie de produit')
-        else: self.pie_categorie('Catégorie de produit')
+        else: st.markdown('## Distribution par Catégories'); self.pie_categorie('Catégorie de produit')
         st.markdown("---")
         if len(selected_categ) == 1:
             st.markdown("## Durée entre commercialisation et rappel pour " + selected_categ[0])
@@ -165,7 +166,7 @@ class Page_analyse_simples:
             titleFontSize=14
         )
         st.altair_chart(nature_chart, use_container_width=True)
-    
+    @decorator_log.log_execution_time
     def sidebar_sliders(self):
         min_date = self.df["Date de publication"].min().date()
         max_date = self.df["Date de publication"].max().date()
@@ -235,7 +236,7 @@ class Page_analyse_simples:
             color=alt.Color(categorie+':N', legend=alt.Legend(title="Catégories de produits")),
             tooltip=[alt.Tooltip(categorie+ ':N'), alt.Tooltip('Percentage:Q', format='.2f', title='Percentage')]  # Show percentage on hover
         ).properties(
-            title='Distribution par '+ categorie + ' (%)',
+            title='',
             width=300,
             height=600
         ).configure_title(

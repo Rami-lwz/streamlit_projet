@@ -16,7 +16,7 @@ class Page_analyse_poussee:
     def __init__(self, df):
         self.df = df
         self.custom_stop_words = set()
-
+    @decorator_log.log_execution_time
     def app(self, sidebar=True):
         st.title('Page du wordcloud')  
         st.markdown("---")
@@ -70,7 +70,7 @@ class Page_analyse_poussee:
 
         return wordcloud    
     
-    
+    @decorator_log.log_execution_time
     def sidebar_sliders(self):
         min_date = self.df["Date de publication"].min().date()
         max_date = self.df["Date de publication"].max().date()

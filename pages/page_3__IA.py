@@ -19,7 +19,7 @@ class Page_wordcloud:
     def __init__(self, df):
         self.df = df
         self.custom_stop_words = set()
-
+    @decorator_log.log_execution_time
     def app(self, sidebar=True):
         st.title('Page d\'IA')  
         st.markdown("---")
@@ -35,14 +35,15 @@ class Page_wordcloud:
         cols = st.columns(5)
         
         st.markdown('# Word clouds for each cluster\n')
-
+        colormaps = ["Blues", "Greens", "Reds", "Purples", "Oranges"]
         for i in range(num_clusters):
-            wordcloud = WordCloud(width=800, height=400, background_color='white').generate(' '.join(cluster_terms_df[f'Cluster {i}']))
+            wordcloud = WordCloud(width=1000, height=800, background_color='black', colormap=colormaps[i]).generate(' '.join(cluster_terms_df[f'Cluster {i}']))
             
             # Display the generated image in Streamlit:
             with cols[i]:
                 st.markdown(f'## Cluster {i}')
                 st.image(wordcloud.to_array())
+    @decorator_log.log_execution_time
     def IA(self, num_clusters):
         stop_words_french = [
             "alors", "au", "aucuns", "aussi", "autre", "avant", "avec", "avoir", "bon", "car", "ce", "cela", "ces", "ceux",
@@ -82,7 +83,7 @@ class Page_wordcloud:
             cluster_terms[f"Cluster {i}"] = top_terms
         cluster_terms_df = pd.DataFrame(cluster_terms)
         return cluster_distribution, cluster_terms_df
-    
+    @decorator_log.log_execution_time
     def sidebar_sliders(self):
         min_date = self.df["Date de publication"].min().date()
         max_date = self.df["Date de publication"].max().date()
