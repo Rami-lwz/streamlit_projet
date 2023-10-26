@@ -10,7 +10,11 @@ except: pass
 def app(df):
     st.title('Etude sur les Rappels de produits depuis 2018')
     st.markdown("Afficher la donnée") 
-
+    df_brut=pd.read_csv('./data/rappelconso0.csv',sep=";")
+    st.write("Base de donnée Brute : ", df_brut.shape[0])
+    st.dataframe(df_brut.sample(10))
+    
+    st.write("Base de donnée Netoyée : ", df.shape[0])
     selected_columns = st.multiselect("Colonnes", df.columns, default=df.columns.tolist())
     search_input = st.text_input("Barre de recherche", "", placeholder='🔍  |      Filtrer le DF ')
     if search_input:

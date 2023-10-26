@@ -42,6 +42,7 @@ class Page_wordcloud:
             with cols[i]:
                 st.markdown(f'## Cluster {i}')
                 st.image(wordcloud.to_array())
+        self.plot_top_brands_per_cluster()
     @decorator_log.log_execution_time
     def IA(self, num_clusters):
         stop_words_french = [
@@ -82,6 +83,35 @@ class Page_wordcloud:
             cluster_terms[f"Cluster {i}"] = top_terms
         cluster_terms_df = pd.DataFrame(cluster_terms)
         return cluster_distribution, cluster_terms_df
+    
+    @decorator_log.log_execution_time
+    def plot_top_brands_per_cluster(self):
+        # Group the data by 'Cluster' and 'Nom de la marque du produit', then count the occurrences of each brand within each cluster
+        grouped_brands = self.df.groupby(['Cluster', 'Nom de la marque du produit']).size().reset_index(name='counts')
+
+        # Create columns in Streamlit for each cluster
+        cols = st.columns(5)  # Assuming you have 5 clusters
+
+        for i in range(5):  # Loop over each cluster
+            # Filter for the current cluster
+            cluster_data = grouped_brands[grouped_brands['Cluster'] == i]
+
+            # Get the top 5 brands for the current cluster
+            top_brands_cluster = cluster_data.sort_values('counts', ascending=False).head(5)
+
+            # Create a bar chart for the current cluster
+            fig, ax = plt.subplots()
+            fig.set_size_inches(15, 15)
+
+            top_brands_cluster.plot(kind='barh', x='Nom de la marque du produit', y='counts', ax=ax, color='skyblue', legend=None)
+            ax.set_title(f'Cluster {i} Top Brands')
+            ax.set_xlabel('Number of Occurrences')
+            ax.set_ylabel('Brands')
+
+            # Use the appropriate column to display the chart
+            with cols[i]:
+                st.pyplot(fig)
+    
     @decorator_log.log_execution_time
     def sidebar_sliders(self):
         min_date = self.df["Date de publication"].min().date()
